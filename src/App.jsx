@@ -5,7 +5,7 @@ import { CssBaseline, Box, Container, Paper } from '@mui/material';
 // Import Context Provider
 import { CartProvider } from './Components/CartContext';
 
-// Import your components
+// --- EXISTING USER COMPONENTS ---
 import LoginPage from './Components/LoginPage';
 import RegisterPage from './Components/RegisterPage';
 import ForgotPasswordFlow from './Components/ForgotPasswordFlow';
@@ -14,6 +14,12 @@ import CategoryPage from './Components/CategoryPage';
 import CartPage from './Components/CartPage';
 import PaymentPage from './Components/PaymentPage';
 import NotificationPage from './Components/NotificationPage';
+
+// --- NEW ADMIN COMPONENTS ---
+import AdminLayout from './Components/AdminLayout';
+import AdminDashboard from './Components/Admin/AdminDashboard';
+import ManageMenu from './Components/Admin/ManageMenu';
+import ViewOrders from './Components/Admin/ViewOrders';
 
 // A Layout wrapper to keep Auth pages centered and small
 const AuthLayout = ({ children }) => (
@@ -46,11 +52,10 @@ function App() {
           <Route path="/register" element={<AuthLayout><RegisterPage /></AuthLayout>} />
           <Route path="/forgot-password" element={<AuthLayout><ForgotPasswordFlow /></AuthLayout>} />
           
-          {/* 3. Main Dashboard (Popular Items) */}
+          {/* 3. Main User Dashboard (Popular Items) */}
           <Route path="/food-list" element={<FoodListPage />} />
           
-          {/* 4. The Category Menus 
-              CRITICAL: This path "/menu/:type" must match the navigate() call in FoodListPage */}
+          {/* 4. The Category Menus */}
           <Route path="/menu/:type" element={<CategoryPage />} />
           
           {/* 5. Cart, Checkout, and Tracking */}
@@ -58,7 +63,15 @@ function App() {
           <Route path="/payment" element={<PaymentPage />} />
           <Route path="/notifications" element={<NotificationPage />} />
 
-          {/* 6. Fallback */}
+          {/* 6. ADMIN DASHBOARD FLOW */}
+          {/* This uses a nested route structure to keep the AdminLayout sidebar visible */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} /> {/* Admin Dashboard (Page 7) */}
+            <Route path="manage-menu" element={<ManageMenu />} /> {/* Manage Menu Page (Page 5) */}
+            <Route path="orders" element={<ViewOrders />} /> {/* View Orders Page (Page 9) */}
+          </Route>
+
+          {/* 7. Fallback */}
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Router>
