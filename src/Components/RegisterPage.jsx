@@ -34,26 +34,45 @@ const RegisterPage = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    
+    // --- 1. VALIDATION LOGIC (Fixed) ---
     let tempErrors = {};
-
-    if (!formData.name) tempErrors.name = "name is required";
+    if (!formData.name.trim()) tempErrors.name = "name is required";
     if (!/\S+@\S+\.\S+/.test(formData.email)) tempErrors.email = "email is invalid";
-    if (formData.password.length < 6) tempErrors.password = "password too short";
+    if (formData.password.length < 6) tempErrors.password = "password must be 6+ chars";
     if (formData.password !== formData.confirmPassword) {
       tempErrors.confirmPassword = "passwords do not match";
     }
 
-    if (Object.keys(tempErrors).length > 0) {
-      setErrors(tempErrors);
-      return;
+    if (Object.keys(tempErrors).length > 0) { 
+      setErrors(tempErrors); 
+      return; 
     }
 
+    // --- 2. API CALL ---
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch('http://localhost:5000/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'registration failed');
+      }
+
+      alert("registration successful! please login.");
       navigate('/login');
+
     } catch (err) {
-      setErrors({ server: "registration failed. try again later." });
+      setErrors({ server: err.message });
     } finally {
       setLoading(false);
     }
@@ -73,125 +92,78 @@ const RegisterPage = () => {
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
-      {/* Brand Header */}
-      <Fade in={true} timeout={800}>
-        <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <AppRegistrationOutlined sx={{ fontSize: 40, color: primaryColor, mb: 1 }} />
-          <Typography variant="h4" sx={{ fontWeight: '900', color: charcoal, letterSpacing: -1 }}>
-            smartCanteen
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-            create your account
-          </Typography>
-        </Box>
-      </Fade>
-
+    <Box sx={{ width: '100%', minHeight: '100vh', display: 'flex', alignItems: 'center', bgcolor: '#fdfdfd' }}>
       <Zoom in={true} style={{ transitionDelay: '200ms' }}>
         <Stack 
           spacing={2.5} 
           component="form" 
           onSubmit={handleRegister}
-          sx={{ width: '100%', maxWidth: 400, mx: 'auto' }}
+          sx={{ width: '100%', maxWidth: 400, mx: 'auto', p: 4 }}
         >
+          <Box sx={{ mb: 2, textAlign: 'center' }}>
+            <AppRegistrationOutlined sx={{ fontSize: 40, color: primaryColor, mb: 1 }} />
+            <Typography variant="h4" sx={{ fontWeight: '900', color: charcoal, letterSpacing: -1 }}>
+              smartCanteen
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              create your account
+            </Typography>
+          </Box>
+
           {errors.server && (
-            <Typography color="error" variant="caption" align="center" sx={{ display: 'block', textTransform: 'lowercase' }}>
+            <Typography color="error" variant="caption" align="center" sx={{ display: 'block', bgcolor: '#ffebee', p: 1, borderRadius: '8px' }}>
               {errors.server}
             </Typography>
           )}
 
           <TextField 
-            label="full name" 
-            name="name"
-            fullWidth 
-            variant="filled"
-            value={formData.name}
-            onChange={handleChange}
-            error={!!errors.name}
-            helperText={errors.name}
-            InputProps={{ 
-              disableUnderline: true,
-              startAdornment: <InputAdornment position="start"><PersonOutline sx={{ color: primaryColor, fontSize: 20 }} /></InputAdornment>
-            }}
+            label="full name" name="name" fullWidth variant="filled"
+            value={formData.name} onChange={handleChange}
+            error={!!errors.name} helperText={errors.name}
+            InputProps={{ disableUnderline: true, startAdornment: <InputAdornment position="start"><PersonOutline sx={{ color: primaryColor, fontSize: 20 }} /></InputAdornment>}}
             sx={inputStyle}
           />
           
           <TextField 
-            label="email address" 
-            name="email"
-            fullWidth 
-            variant="filled"
-            value={formData.email}
-            onChange={handleChange}
-            error={!!errors.email}
-            helperText={errors.email}
-            InputProps={{ 
-              disableUnderline: true,
-              startAdornment: <InputAdornment position="start"><EmailOutlined sx={{ color: primaryColor, fontSize: 20 }} /></InputAdornment>
-            }}
+            label="email address" name="email" fullWidth variant="filled"
+            value={formData.email} onChange={handleChange}
+            error={!!errors.email} helperText={errors.email}
+            InputProps={{ disableUnderline: true, startAdornment: <InputAdornment position="start"><EmailOutlined sx={{ color: primaryColor, fontSize: 20 }} /></InputAdornment>}}
             sx={inputStyle}
           />
           
           <TextField 
-            label="password" 
-            name="password"
-            type="password" 
-            fullWidth 
-            variant="filled"
-            value={formData.password}
-            onChange={handleChange}
-            error={!!errors.password}
-            helperText={errors.password}
-            InputProps={{ 
-              disableUnderline: true,
-              startAdornment: <InputAdornment position="start"><LockOutlined sx={{ color: primaryColor, fontSize: 20 }} /></InputAdornment>
-            }}
+            label="password" name="password" type="password" fullWidth variant="filled"
+            value={formData.password} onChange={handleChange}
+            error={!!errors.password} helperText={errors.password}
+            InputProps={{ disableUnderline: true, startAdornment: <InputAdornment position="start"><LockOutlined sx={{ color: primaryColor, fontSize: 20 }} /></InputAdornment>}}
             sx={inputStyle}
           />
           
           <TextField 
-            label="confirm password" 
-            name="confirmPassword"
-            type="password" 
-            fullWidth 
-            variant="filled"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword}
-            InputProps={{ 
-              disableUnderline: true,
-              startAdornment: <InputAdornment position="start"><LockOutlined sx={{ color: primaryColor, fontSize: 20 }} /></InputAdornment>
-            }}
+            label="confirm password" name="confirmPassword" type="password" fullWidth variant="filled"
+            value={formData.confirmPassword} onChange={handleChange}
+            error={!!errors.confirmPassword} helperText={errors.confirmPassword}
+            InputProps={{ disableUnderline: true, startAdornment: <InputAdornment position="start"><LockOutlined sx={{ color: primaryColor, fontSize: 20 }} /></InputAdornment>}}
             sx={inputStyle}
           />
 
           <Button 
-            variant="contained" 
-            fullWidth 
-            type="submit"
-            disabled={loading}
+            variant="contained" fullWidth type="submit" disabled={loading}
             sx={{ 
-              mt: 2, 
-              py: 2, 
-              fontWeight: '800', 
-              borderRadius: '18px',
-              bgcolor: primaryColor,
-              textTransform: 'lowercase',
+              mt: 2, py: 2, fontWeight: '800', borderRadius: '18px',
+              bgcolor: primaryColor, textTransform: 'lowercase',
               boxShadow: `0 8px 20px ${primaryColor}44`,
-              '&:hover': { bgcolor: '#bf360c', boxShadow: 'none' }
+              '&:hover': { bgcolor: '#bf360c' }
             }}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'create account'}
           </Button>
 
           <Link 
-            component="button" 
-            type="button"
-            variant="body2" 
-            underline="none"
+            component="button" type="button" variant="body2" underline="none"
             onClick={() => navigate('/login')}
-            sx={{ textAlign: 'center', mt: 1, color: 'text.secondary', fontWeight: 600, textTransform: 'lowercase' }}
+            sx={{ textAlign: 'center', color: 'text.secondary', fontWeight: 600 }}
           >
             already have an account? <span style={{ color: primaryColor, fontWeight: 800 }}>login</span>
           </Link>
