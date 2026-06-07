@@ -19,7 +19,6 @@ const ManageMenu = () => {
     name: '', price: '', category: 'Morning', status: 'Available', image_url: '' 
   });
 
-  // --- REAL-TIME SYNC LOGIC ---
   const fetchMenu = async () => {
     try {
       const response = await fetch('http://localhost:5000/api/menu');
@@ -27,25 +26,15 @@ const ManageMenu = () => {
         const data = await response.json();
         setMenuItems(data);
       }
-    } catch (error) { 
-      console.error("Sync failed:", error); 
-    }
+    } catch (error) { console.error("Sync failed:", error); }
   };
 
   useEffect(() => {
-    // Initial fetch when page loads
     fetchMenu();
-
-    // POLLING: Re-fetch every 5 seconds to show changes from other users/admins
-    const interval = setInterval(() => {
-      fetchMenu();
-    }, 5000);
-
-    // Cleanup interval when user leaves the page
+    const interval = setInterval(fetchMenu, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // --- UI HANDLERS ---
   const handleOpen = (item = null) => {
     if (item) {
       setCurrentItem(item);
@@ -64,17 +53,9 @@ const ManageMenu = () => {
     formData.append('price', currentItem.price);
     formData.append('category', currentItem.category);
     formData.append('status', currentItem.status);
+    if (selectedFile) formData.append('image', selectedFile);
 
-    if (editMode && !selectedFile && currentItem.image_url) {
-      formData.append('image_url', currentItem.image_url);
-    }
-    if (selectedFile) {
-      formData.append('image', selectedFile);
-    }
-
-    const url = editMode 
-      ? `http://localhost:5000/api/menu/${currentItem.id}` 
-      : 'http://localhost:5000/api/menu';
+    const url = editMode ? `http://localhost:5000/api/menu/${currentItem.id}` : 'http://localhost:5000/api/menu';
 
     try {
       const response = await fetch(url, {
@@ -84,32 +65,31 @@ const ManageMenu = () => {
 
       if (response.ok) {
         setOpen(false);
-        fetchMenu(); // Instant local refresh
+        fetchMenu();
       } else {
         const errorData = await response.json();
-        alert("Error: " + errorData.error);
+        alert("Error: " + (errorData.message || "Failed to update item"));
       }
-    } catch (error) { 
-      console.error("Save failed:", error); 
-    }
+    } catch (error) { console.error("Save failed:", error); }
   };
 
   const handleToggleStatus = async (item) => {
     const newStatus = item.status === 'Available' ? 'Unavailable' : 'Available';
     
-    // Optimistic Update: Change UI immediately
-    setMenuItems(prev => prev.map(i => 
-        i.id === item.id ? { ...i, status: newStatus } : i
-    ));
+    // Update local UI
+    setMenuItems(prev => prev.map(i => i.id === item.id ? { ...i, status: newStatus } : i));
 
     try {
       const response = await fetch(`http://localhost:5000/api/menu/${item.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...item, status: newStatus }),
+        body: JSON.stringify({ status: newStatus }),
       });
 
-      if (!response.ok) fetchMenu(); // Rollback if server fails
+      if (!response.ok) {
+        alert("Failed to toggle status");
+        fetchMenu(); // Revert
+      }
     } catch (error) { 
       fetchMenu();
       console.error("Toggle failed:", error); 
@@ -117,17 +97,12 @@ const ManageMenu = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Delete item?")) {
-      // Optimistic Update: Remove from UI immediately
-      setMenuItems(prev => prev.filter(item => item.id !== id));
-
+    if (window.confirm("Are you sure?")) {
       try {
         const response = await fetch(`http://localhost:5000/api/menu/${id}`, { method: 'DELETE' });
-        if (!response.ok) fetchMenu(); // Rollback if server fails
-      } catch (error) {
-        fetchMenu();
-        console.error("Delete failed:", error);
-      }
+        if (response.ok) fetchMenu();
+        else alert("Failed to delete");
+      } catch (error) { console.error("Delete failed:", error); }
     }
   };
 
@@ -163,11 +138,7 @@ const ManageMenu = () => {
                 <TableCell>{item.category}</TableCell>
                 <TableCell>₹{item.price}</TableCell>
                 <TableCell>
-                  <Chip 
-                    label={item.status} 
-                    color={item.status === 'Available' ? 'success' : 'error'} 
-                    size="small" 
-                  />
+                  <Chip label={item.status} color={item.status === 'Available' ? 'success' : 'error'} size="small" />
                 </TableCell>
                 <TableCell align="right">
                   <IconButton onClick={() => handleToggleStatus(item)}>
@@ -187,14 +158,11 @@ const ManageMenu = () => {
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
             <TextField label="Name" fullWidth value={currentItem.name} onChange={(e) => setCurrentItem({...currentItem, name: e.target.value})} />
-            
             <Button variant="outlined" component="label" startIcon={<CloudUploadRounded />}>
               {selectedFile ? selectedFile.name : "Upload Food Image"}
               <input type="file" hidden accept="image/*" onChange={(e) => setSelectedFile(e.target.files[0])} />
             </Button>
-
             <TextField label="Price" type="number" fullWidth value={currentItem.price} onChange={(e) => setCurrentItem({...currentItem, price: e.target.value})} />
-            
             <TextField select label="Category" fullWidth value={currentItem.category} onChange={(e) => setCurrentItem({...currentItem, category: e.target.value})}>
               <MenuItem value="Morning">Morning (Breakfast)</MenuItem>
               <MenuItem value="Afternoon">Afternoon (Lunch)</MenuItem>
