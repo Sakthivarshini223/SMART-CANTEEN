@@ -68,7 +68,7 @@ const AdminLayout = () => {
         <Toolbar sx={{ px: 3, py: 2 }}>
           <AdminPanelSettingsRounded sx={{ color: '#10b981', mr: 1 }} />
           <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '1px' }}>
-            CIBO <span style={{ color: '#10b981' }}>ADMIN</span>
+             <span style={{ color: '#10b981' }}>ADMIN</span>
           </Typography>
         </Toolbar>
         

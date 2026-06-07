@@ -37,6 +37,7 @@ const AuthLayout = ({ children }) => (
     </Container>
   </Box>
 );
+// ... (imports remain the same)
 
 function App() {
   return (
@@ -48,15 +49,15 @@ function App() {
           <Route path="/" element={<Navigate to="/login" />} />
           
           {/* 2. Authentication Routes */}
-          <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<AuthLayout><RegisterPage /></AuthLayout>} />
           <Route path="/forgot-password" element={<AuthLayout><ForgotPasswordFlow /></AuthLayout>} />
           
-          {/* 3. Main User Dashboard (Popular Items) */}
+          {/* 3. Main User Dashboard */}
           <Route path="/food-list" element={<FoodListPage />} />
           
-          {/* 4. The Category Menus */}
-          <Route path="/menu/:type" element={<CategoryPage />} />
+          {/* 4. FIXED: Changed "/menu/:type" to "/category/:type" to match your navigation */}
+          <Route path="/category/:type" element={<CategoryPage />} />
           
           {/* 5. Cart, Checkout, and Tracking */}
           <Route path="/cart" element={<CartPage />} />
@@ -64,14 +65,13 @@ function App() {
           <Route path="/notifications" element={<NotificationPage />} />
 
           {/* 6. ADMIN DASHBOARD FLOW */}
-          {/* This uses a nested route structure to keep the AdminLayout sidebar visible */}
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} /> {/* Admin Dashboard (Page 7) */}
-            <Route path="manage-menu" element={<ManageMenu />} /> {/* Manage Menu Page (Page 5) */}
-            <Route path="orders" element={<ViewOrders />} /> {/* View Orders Page (Page 9) */}
+            <Route index element={<AdminDashboard />} />
+            <Route path="manage-menu" element={<ManageMenu />} />
+            <Route path="orders" element={<ViewOrders />} />
           </Route>
 
-          {/* 7. Fallback */}
+          {/* 7. Fallback - This was catching the wrong "/category" path and sending you here */}
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Router>
@@ -80,3 +80,4 @@ function App() {
 }
 
 export default App;
+

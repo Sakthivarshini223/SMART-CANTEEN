@@ -1,49 +1,73 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Container, Typography, Paper, Button, Stack, Box, CircularProgress } from "@mui/material";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import { useCart } from "./CartContext";
+import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Box, Typography, Button, CircularProgress, Paper } from '@mui/material';
+import { useCart } from './CartContext';
 
 const PaymentPage = () => {
-  const { confirmOrder } = useCart();
   const location = useLocation();
   const navigate = useNavigate();
-  const { total, paymentMethod, pickupTime } = location.state || { total: 0, paymentMethod: 'Cash', pickupTime: 'Now' };
+  const { cart, clearCart, fetchOrders } = useCart(); // Added cart to access item IDs
+  const [loading, setLoading] = useState(false);
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
+  const { total } = location.state || { total: 0 };
 
+ const confirmOrder = async () => {
+  // Get the real ID from the session you saved during login
+  const loggedInUserId = localStorage.getItem('userId'); 
+
+  try {
+    const response = await fetch('http://localhost:5000/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: loggedInUserId, // Use the dynamic ID here!
+        total_price: total,
+        status: 'Pending',
+        items: cart.map(item => item.id) 
+      }),
+    });
+
+    if (response.ok) {
+      clearCart(); 
+      await fetchOrders(); 
+      navigate('/notifications'); 
+    }
+  } catch (error) {
+    console.error("Order failed:", error);
+    setLoading(false);
+  }
+};
   const handlePayNow = () => {
-    setIsProcessing(true);
+    setLoading(true);
+    // This is now correctly defined above and can be called
     setTimeout(() => {
-      confirmOrder({ total, pickupTime }); 
-      setIsProcessing(false);
-      setIsFinished(true);
+      confirmOrder(); 
     }, 2000);
   };
 
-  if (isFinished) {
-    return (
-      <Container maxWidth="sm" sx={{ mt: 10, textAlign: "center" }}>
-        <CheckCircleOutlineIcon sx={{ fontSize: 100, color: "green", mb: 2 }} />
-        <Typography variant="h4" fontWeight="900">Payment Successful!</Typography>
-        <Typography variant="body1" sx={{ mt: 1, mb: 4 }}>Order confirmed for {pickupTime}</Typography>
-        <Button variant="contained" onClick={() => navigate("/food-list")} sx={{ bgcolor: "#263238", px: 4 }}>Back to Home</Button>
-      </Container>
-    );
-  }
-
   return (
-    <Box sx={{ bgcolor: "#FAFAFA", minHeight: "100vh", py: 6 }}>
-      <Container maxWidth="sm">
-        <Paper sx={{ p: 4, borderRadius: "24px", textAlign: 'center' }}>
-          <Typography variant="h5" mb={2}>Completing {paymentMethod} Payment</Typography>
-          <Typography variant="h3" color="#E65100" fontWeight="900" mb={4}>₹{total}</Typography>
-          <Button fullWidth variant="contained" onClick={handlePayNow} disabled={isProcessing} sx={{ py: 2, bgcolor: "#E65100", borderRadius: '12px' }}>
-            {isProcessing ? <CircularProgress size={24} color="inherit" /> : `CONFIRM PAY`}
-          </Button>
-        </Paper>
-      </Container>
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+      <Paper sx={{ p: 6, borderRadius: '32px', textAlign: 'center', maxWidth: 400, width: '90%' }}>
+        <Typography variant="h5" fontWeight="600" mb={2}>Completing UPI Payment</Typography>
+        
+        <Typography variant="h2" fontWeight="900" color="#E65100" mb={4}>
+          ₹{total}
+        </Typography>
+
+        <Button 
+          variant="contained" 
+          fullWidth 
+          onClick={handlePayNow}
+          disabled={loading}
+          sx={{ 
+            bgcolor: loading ? '#ccc' : '#E65100', 
+            py: 2, borderRadius: '15px',
+            '&:hover': { bgcolor: '#BF360C' }
+          }}
+        >
+          {loading ? <CircularProgress size={24} color="inherit" /> : "Pay Now"}
+        </Button>
+      </Paper>
     </Box>
   );
 };
